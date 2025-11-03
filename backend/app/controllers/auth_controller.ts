@@ -36,7 +36,7 @@ export default class AuthController {
     })
   }
 
-  async login({ request, response }: HttpContext) {
+  async login({ request, response, auth }: HttpContext) {
     const { email, password } = request.only(['email', 'password'])
 
     const user = await User.verifyCredentials(email, password)
@@ -52,6 +52,9 @@ export default class AuthController {
         message: 'Your account is inactive.',
       })
     }
+
+    // Actually log in the user and create session
+    await auth.use('web').login(user)
 
     // Load company relationship
     await user.load('company')
