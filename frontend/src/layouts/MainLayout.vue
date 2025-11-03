@@ -31,6 +31,14 @@
 
         <template v-if="authStore.isAuthenticated">
           <q-btn
+            v-if="authStore.user?.role === 'admin'"
+            flat
+            dense
+            label="Admin"
+            icon="admin_panel_settings"
+            :to="{ name: 'admin' }"
+          />
+          <q-btn
             flat
             dense
             label="Account"

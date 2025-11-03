@@ -41,6 +41,12 @@ export default class extends BaseSchema {
       table.index(['wear_layer'])
       table.index(['material'])
     })
+
+    // PostgreSQL full-text search index
+    this.schema.raw(`
+      CREATE INDEX products_search_idx ON products
+      USING GIN (to_tsvector('english', name || ' ' || COALESCE(description, '')))
+    `)
   }
 
   async down() {

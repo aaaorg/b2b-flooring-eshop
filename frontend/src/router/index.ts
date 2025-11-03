@@ -33,6 +33,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'order-confirmation/:id',
+        name: 'order-confirmation',
+        component: () => import('@/pages/cart/OrderConfirmation.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'account',
         name: 'account',
         component: () => import('@/pages/account/AccountPage.vue'),
@@ -51,8 +57,24 @@ const routes: RouteRecordRaw[] = [
             path: 'orders/:id',
             name: 'order-detail',
             component: () => import('@/pages/account/OrderDetail.vue')
+          },
+          {
+            path: 'shopping-lists',
+            name: 'shopping-lists',
+            component: () => import('@/pages/account/ShoppingLists.vue')
+          },
+          {
+            path: 'shopping-lists/:id',
+            name: 'shopping-list-detail',
+            component: () => import('@/pages/account/ShoppingListDetail.vue')
           }
         ]
+      },
+      {
+        path: 'admin',
+        name: 'admin',
+        component: () => import('@/pages/admin/UserApproval.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   },
@@ -85,6 +107,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (to.meta.requiresAdmin && authStore.user?.role !== 'admin') {
+    next({ name: 'home' })
   } else {
     next()
   }

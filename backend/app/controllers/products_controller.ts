@@ -17,13 +17,12 @@ export default class ProductsController {
 
     const query = Product.query().where('isActive', true).preload('category')
 
-    // Simple search (SQLite uses LIKE which is case-insensitive by default)
+    // Full-text search for PostgreSQL
     if (search) {
-      query.where((q) => {
-        q.whereLike('name', `%${search}%`)
-          .orWhereLike('description', `%${search}%`)
-          .orWhereLike('sku', `%${search}%`)
-      })
+      query.whereRaw(
+        `to_tsvector('english', name || ' ' || COALESCE(description, '')) @@ plainto_tsquery('english', ?)`,
+        [search]
+      )
     }
 
     // Filters
