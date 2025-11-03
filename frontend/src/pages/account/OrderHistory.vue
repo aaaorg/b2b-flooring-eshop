@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { ordersService, type Order } from '@/services/orders.service'
 import { useCartStore } from '@/stores/cart'
@@ -137,7 +137,18 @@ async function loadOrders() {
     const response = await ordersService.getOrders(params)
     console.log('[OrderHistory] Got response:', response)
 
-    orders.value = response.data
+    // Use markRaw to prevent Vue reactivity issues with complex nested structures
+    const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || response.data || [])
+    orders.value = rawData.map((order: any) => ({
+      id: order.id,
+      orderNumber: order.orderNumber || order.order_number,
+      orderType: order.orderType || order.order_type,
+      status: order.status,
+      totalAmount: order.totalAmount || order.total_amount,
+      createdAt: order.createdAt || order.created_at,
+      items: order.items || []
+    }))
+
     pagination.value.rowsNumber = response.meta?.total || 0
     console.log('[OrderHistory] Orders loaded successfully, count:', orders.value.length)
   } catch (error) {
