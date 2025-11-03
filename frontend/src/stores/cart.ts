@@ -32,7 +32,10 @@ export const useCartStore = defineStore('cart', () => {
 
   const totalAmount = computed(() => {
     return items.value.reduce((total, item) => {
-      return total + (item.product.basePrice * item.quantity)
+      const price = typeof item.product.basePrice === 'string'
+        ? parseFloat(item.product.basePrice)
+        : item.product.basePrice
+      return total + (price * item.quantity)
     }, 0)
   })
 

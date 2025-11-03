@@ -17,8 +17,8 @@
                   <q-item-label caption>SKU: {{ item.product.sku }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-item-label>{{ item.quantity }} x {{ item.product.basePrice.toFixed(2) }} CZK</q-item-label>
-                  <q-item-label caption>{{ (item.quantity * item.product.basePrice).toFixed(2) }} CZK</q-item-label>
+                  <q-item-label>{{ item.quantity }} x {{ formatPrice(item.product.basePrice) }} CZK</q-item-label>
+                  <q-item-label caption>{{ (item.quantity * parseFloat(item.product.basePrice)).toFixed(2) }} CZK</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -137,6 +137,11 @@ import { Notify } from 'quasar'
 
 const cartStore = useCartStore()
 const router = useRouter()
+
+function formatPrice(price: number | string): string {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  return numPrice.toFixed(2)
+}
 
 const orderType = ref<'purchase' | 'reservation'>('purchase')
 const loading = ref(false)

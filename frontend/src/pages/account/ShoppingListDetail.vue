@@ -70,13 +70,13 @@
 
                 <template v-slot:body-cell-unitPrice="props">
                   <q-td :props="props">
-                    {{ props.row.product.basePrice.toFixed(2) }} CZK / {{ props.row.product.unit }}
+                    {{ formatPrice(props.row.product.basePrice) }} CZK / {{ props.row.product.unit }}
                   </q-td>
                 </template>
 
                 <template v-slot:body-cell-subtotal="props">
                   <q-td :props="props">
-                    {{ (props.row.quantity * props.row.product.basePrice).toFixed(2) }} CZK
+                    {{ (props.row.quantity * parseFloat(props.row.product.basePrice)).toFixed(2) }} CZK
                   </q-td>
                 </template>
 
@@ -170,7 +170,7 @@
                 <q-item-label caption>SKU: {{ product.sku }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-item-label>{{ product.basePrice.toFixed(2) }} CZK</q-item-label>
+                <q-item-label>{{ formatPrice(product.basePrice) }} CZK</q-item-label>
                 <q-item-label caption>{{ product.stockQuantity }} in stock</q-item-label>
               </q-item-section>
             </q-item>
@@ -196,6 +196,11 @@ import { Notify } from 'quasar'
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+
+function formatPrice(price: number | string): string {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  return numPrice.toFixed(2)
+}
 
 const listId = Number(route.params.id)
 const shoppingList = ref<ShoppingList | null>(null)

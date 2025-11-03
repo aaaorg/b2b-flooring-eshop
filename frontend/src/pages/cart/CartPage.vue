@@ -38,7 +38,7 @@
 
         <template v-slot:body-cell-subtotal="props">
           <q-td :props="props">
-            {{ (props.row.product.basePrice * props.row.quantity).toFixed(2) }} CZK
+            {{ (parseFloat(props.row.product.basePrice) * props.row.quantity).toFixed(2) }} CZK
           </q-td>
         </template>
 
@@ -95,10 +95,15 @@ import { useCartStore } from '@/stores/cart'
 
 const cartStore = useCartStore()
 
+function formatPrice(price: number | string): string {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  return numPrice.toFixed(2)
+}
+
 const columns = [
   { name: 'name', label: 'Product', field: (row: any) => row.product.name, align: 'left' },
   { name: 'sku', label: 'SKU', field: (row: any) => row.product.sku, align: 'left' },
-  { name: 'price', label: 'Price', field: (row: any) => `${row.product.basePrice.toFixed(2)} CZK`, align: 'right' },
+  { name: 'price', label: 'Price', field: (row: any) => `${formatPrice(row.product.basePrice)} CZK`, align: 'right' },
   { name: 'quantity', label: 'Quantity', align: 'center' },
   { name: 'subtotal', label: 'Subtotal', align: 'right' },
   { name: 'actions', label: '', align: 'center' }

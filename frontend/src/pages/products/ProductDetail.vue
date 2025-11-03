@@ -24,7 +24,7 @@
             </div>
 
             <div class="col-12 col-md-4">
-              <div class="text-h5 q-mb-md">{{ product.basePrice.toFixed(2) }} CZK / {{ product.unit }}</div>
+              <div class="text-h5 q-mb-md">{{ formatPrice(product.basePrice) }} CZK / {{ product.unit }}</div>
 
               <q-badge :color="product.stock > 0 ? 'positive' : 'negative'" class="q-mb-md">
                 {{ product.stock > 0 ? `${product.stock} ${product.unit} in stock` : 'Out of stock' }}
@@ -83,5 +83,9 @@ function addToCart() {
   if (product.value) {
     cartStore.addItem(product.value, quantity.value)
   }
+}
+
+function formatPrice(price: number | string) {
+  return typeof price === 'string' ? parseFloat(price).toFixed(2) : price.toFixed(2)
 }
 </script>
