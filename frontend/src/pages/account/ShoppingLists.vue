@@ -30,7 +30,7 @@
             <q-item-label class="text-h6">{{ list.name }}</q-item-label>
             <q-item-label caption v-if="list.description">{{ list.description }}</q-item-label>
             <q-item-label caption class="q-mt-xs">
-              {{ list.items?.length || 0 }} item(s) • Updated {{ formatDate(list.updatedAt) }}
+              {{ list.items?.length || 0 }} item(s) • Updated {{ formatDate(list.updatedAt || list.updated_at) }}
             </q-item-label>
           </q-item-section>
 
@@ -161,10 +161,17 @@ onMounted(() => {
 })
 
 async function loadShoppingLists() {
+  console.log('[ShoppingLists] Starting loadShoppingLists')
   loading.value = true
   try {
-    shoppingLists.value = await shoppingListsService.getShoppingLists()
+    const response = await shoppingListsService.getShoppingLists()
+    console.log('[ShoppingLists] Got response:', response)
+
+    // Simple assignment
+    shoppingLists.value = response || []
+    console.log('[ShoppingLists] Shopping lists loaded, count:', shoppingLists.value.length)
   } catch (error) {
+    console.error('[ShoppingLists] Error loading shopping lists:', error)
     Notify.create({
       type: 'negative',
       message: 'Failed to load shopping lists',
@@ -172,6 +179,7 @@ async function loadShoppingLists() {
     })
   } finally {
     loading.value = false
+    console.log('[ShoppingLists] loadShoppingLists finished')
   }
 }
 
@@ -289,6 +297,11 @@ async function addListToCart(list: ShoppingList) {
 }
 
 function formatDate(dateString: string): string {
-  return date.formatDate(new Date(dateString), 'DD.MM.YYYY')
+  if (!dateString) return 'N/A'
+  try {
+    return date.formatDate(new Date(dateString), 'DD.MM.YYYY')
+  } catch (e) {
+    return 'Invalid Date'
+  }
 }
 </script>
