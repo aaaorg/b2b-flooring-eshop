@@ -7,11 +7,16 @@ import db from '@adonisjs/lucid/services/db'
 export default class OrdersController {
   async index({ auth, request, response }: HttpContext) {
     try {
+      console.log('[ORDERS] Starting index - Getting orders')
       const user = auth.user!
+      console.log('[ORDERS] User ID:', user.id)
+
       const page = request.input('page', 1)
       const limit = request.input('limit', 20)
       const orderType = request.input('order_type')
+      console.log('[ORDERS] Query params - page:', page, 'limit:', limit, 'orderType:', orderType)
 
+      console.log('[ORDERS] Building query')
       const query = Order.query()
         .where('user_id', user.id)
         .preload('items')
@@ -21,11 +26,17 @@ export default class OrdersController {
         query.where('order_type', orderType)
       }
 
+      console.log('[ORDERS] Executing query')
       const orders = await query.orderBy('created_at', 'desc').paginate(page, limit)
+      console.log('[ORDERS] Query executed, found', orders.length, 'orders')
 
-      return response.ok(orders.serialize())
+      console.log('[ORDERS] Serializing response')
+      const serialized = orders.serialize()
+      console.log('[ORDERS] Sending response')
+
+      return response.ok(serialized)
     } catch (error) {
-      console.error('Error fetching orders:', error)
+      console.error('[ORDERS] ERROR:', error)
       return response.internalServerError({
         message: 'Failed to fetch orders',
         error: error.message

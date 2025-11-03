@@ -121,6 +121,7 @@ onMounted(() => {
 })
 
 async function loadOrders() {
+  console.log('[OrderHistory] Starting loadOrders')
   loading.value = true
   try {
     const params: any = {
@@ -132,10 +133,15 @@ async function loadOrders() {
       params.order_type = filterType.value
     }
 
+    console.log('[OrderHistory] Calling ordersService.getOrders with params:', params)
     const response = await ordersService.getOrders(params)
+    console.log('[OrderHistory] Got response:', response)
+
     orders.value = response.data
     pagination.value.rowsNumber = response.meta?.total || 0
+    console.log('[OrderHistory] Orders loaded successfully, count:', orders.value.length)
   } catch (error) {
+    console.error('[OrderHistory] Error loading orders:', error)
     Notify.create({
       type: 'negative',
       message: 'Failed to load orders',
@@ -143,6 +149,7 @@ async function loadOrders() {
     })
   } finally {
     loading.value = false
+    console.log('[OrderHistory] loadOrders finished')
   }
 }
 

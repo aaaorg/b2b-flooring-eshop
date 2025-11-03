@@ -31,7 +31,9 @@ export interface Order {
 
 export const ordersService = {
   async getOrders(params?: { page?: number; limit?: number; order_type?: string }) {
+    console.log('[ordersService] getOrders called with params:', params)
     const response = await api.get('/orders', { params })
+    console.log('[ordersService] getOrders response:', response)
     return response.data
   },
 
