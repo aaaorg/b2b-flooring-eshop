@@ -1,11 +1,31 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { authService, type User, type LoginCredentials, type RegisterData } from '@/services/auth.service'
 import { Notify } from 'quasar'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
+
+  // Load user from localStorage on init
+  const storedUser = localStorage.getItem('karsis-user')
+  if (storedUser) {
+    try {
+      user.value = JSON.parse(storedUser)
+    } catch (e) {
+      console.error('Failed to parse user from localStorage', e)
+      localStorage.removeItem('karsis-user')
+    }
+  }
+
+  // Persist user to localStorage
+  watch(user, (newUser) => {
+    if (newUser) {
+      localStorage.setItem('karsis-user', JSON.stringify(newUser))
+    } else {
+      localStorage.removeItem('karsis-user')
+    }
+  }, { deep: true })
 
   const isAuthenticated = computed(() => user.value !== null)
   const isApproved = computed(() => user.value?.isApproved === true)
