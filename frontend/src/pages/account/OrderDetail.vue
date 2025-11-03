@@ -4,7 +4,7 @@
 
     <div v-else-if="order">
       <div class="row justify-between items-center q-mb-md">
-        <div class="text-h4">Order {{ order.orderNumber }}</div>
+        <div class="text-h4">Order {{ order.orderNumber || order.order_number }}</div>
         <q-btn
           flat
           icon="arrow_back"
@@ -23,13 +23,13 @@
               <div class="row q-col-gutter-md">
                 <div class="col-6">
                   <div class="text-caption text-grey-7">Order Number</div>
-                  <div class="text-subtitle1">{{ order.orderNumber }}</div>
+                  <div class="text-subtitle1">{{ order.orderNumber || order.order_number }}</div>
                 </div>
 
                 <div class="col-6">
                   <div class="text-caption text-grey-7">Order Type</div>
-                  <q-badge :color="order.orderType === 'purchase' ? 'primary' : 'secondary'">
-                    {{ order.orderType === 'purchase' ? 'Purchase' : 'Reservation' }}
+                  <q-badge :color="getOrderType(order) === 'purchase' ? 'primary' : 'secondary'">
+                    {{ getOrderType(order) === 'purchase' ? 'Purchase' : 'Reservation' }}
                   </q-badge>
                 </div>
 
@@ -42,7 +42,7 @@
 
                 <div class="col-6">
                   <div class="text-caption text-grey-7">Order Date</div>
-                  <div class="text-subtitle1">{{ formatDate(order.createdAt) }}</div>
+                  <div class="text-subtitle1">{{ formatDate(order.createdAt || order.created_at) }}</div>
                 </div>
 
                 <div class="col-6" v-if="order.paymentStatus">
@@ -86,13 +86,13 @@
 
                 <template v-slot:body-cell-unitPrice="props">
                   <q-td :props="props">
-                    {{ props.row.unitPrice.toFixed(2) }} CZK / {{ props.row.unit }}
+                    {{ formatPrice(props.row.unitPrice || props.row.unit_price) }} CZK / {{ props.row.unit }}
                   </q-td>
                 </template>
 
                 <template v-slot:body-cell-subtotal="props">
                   <q-td :props="props">
-                    {{ props.row.subtotal.toFixed(2) }} CZK
+                    {{ formatPrice(props.row.subtotal) }} CZK
                   </q-td>
                 </template>
               </q-table>
@@ -102,7 +102,7 @@
               <div class="row justify-end">
                 <div class="col-auto">
                   <div class="text-h6 text-primary">
-                    Total: {{ order.totalAmount.toFixed(2) }} {{ order.currency }}
+                    Total: {{ formatPrice(order.totalAmount || order.total_amount) }} {{ order.currency || 'CZK' }}
                   </div>
                 </div>
               </div>
@@ -245,6 +245,21 @@ function getPaymentStatusColor(status: string): string {
 }
 
 function formatDate(dateString: string): string {
-  return date.formatDate(new Date(dateString), 'DD.MM.YYYY HH:mm')
+  if (!dateString) return 'N/A'
+  try {
+    return date.formatDate(new Date(dateString), 'DD.MM.YYYY HH:mm')
+  } catch (e) {
+    return 'Invalid Date'
+  }
+}
+
+function formatPrice(price: any): string {
+  if (!price) return '0.00'
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  return numPrice.toFixed(2)
+}
+
+function getOrderType(order: any): string {
+  return order?.orderType || order?.order_type || ''
 }
 </script>

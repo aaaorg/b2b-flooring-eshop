@@ -13,7 +13,7 @@
       <q-tab name="shopping-lists" label="Shopping Lists" icon="list_alt" :to="{ name: 'shopping-lists' }" />
     </q-tabs>
 
-    <router-view />
+    <router-view :key="route.path" />
   </q-page>
 </template>
 
