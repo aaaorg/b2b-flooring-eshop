@@ -6,38 +6,53 @@ import db from '@adonisjs/lucid/services/db'
 
 export default class OrdersController {
   async index({ auth, request, response }: HttpContext) {
-    const user = auth.user!
-    const page = request.input('page', 1)
-    const limit = request.input('limit', 20)
-    const orderType = request.input('order_type')
+    try {
+      const user = auth.user!
+      const page = request.input('page', 1)
+      const limit = request.input('limit', 20)
+      const orderType = request.input('order_type')
 
-    const query = Order.query()
-      .where('userId', user.id)
-      .preload('items')
-      .preload('company')
+      const query = Order.query()
+        .where('user_id', user.id)
+        .preload('items')
+        .preload('company')
 
-    if (orderType) {
-      query.where('orderType', orderType)
+      if (orderType) {
+        query.where('order_type', orderType)
+      }
+
+      const orders = await query.orderBy('created_at', 'desc').paginate(page, limit)
+
+      return response.ok(orders.serialize())
+    } catch (error) {
+      console.error('Error fetching orders:', error)
+      return response.internalServerError({
+        message: 'Failed to fetch orders',
+        error: error.message
+      })
     }
-
-    const orders = await query.orderBy('createdAt', 'desc').paginate(page, limit)
-
-    return response.ok(orders)
   }
 
   async show({ auth, params, response }: HttpContext) {
-    const user = auth.user!
+    try {
+      const user = auth.user!
 
-    const order = await Order.query()
-      .where('id', params.id)
-      .where('userId', user.id)
-      .preload('items', (query) => {
-        query.preload('product')
+      const order = await Order.query()
+        .where('id', params.id)
+        .where('user_id', user.id)
+        .preload('items', (query) => {
+          query.preload('product')
+        })
+        .preload('company')
+        .firstOrFail()
+
+      return response.ok(order.serialize())
+    } catch (error) {
+      console.error('Error fetching order:', error)
+      return response.notFound({
+        message: 'Order not found'
       })
-      .preload('company')
-      .firstOrFail()
-
-    return response.ok(order)
+    }
   }
 
   async store({ auth, request, response }: HttpContext) {
@@ -76,7 +91,9 @@ export default class OrdersController {
           throw new Error(`Insufficient stock for product: ${product.name}`)
         }
 
-        const subtotal = product.basePrice * item.quantity
+        // Convert basePrice to number (PostgreSQL returns DECIMAL as string)
+        const price = typeof product.basePrice === 'string' ? parseFloat(product.basePrice) : product.basePrice
+        const subtotal = price * item.quantity
         totalAmount += subtotal
 
         orderItems.push({
@@ -84,7 +101,7 @@ export default class OrdersController {
           productName: product.name,
           productSku: product.sku,
           quantity: item.quantity,
-          unitPrice: product.basePrice,
+          unitPrice: price,
           subtotal: subtotal,
           unit: product.unit,
           productAttributes: {
