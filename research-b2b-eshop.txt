@@ -1,0 +1,386 @@
+Here is a deep-research-based guide to building your B2B flooring e-shop using an AI-assisted, 2025-centric workflow.
+
+Based on your experience with Node.js/Express and your self-hosting requirements, the most productive, modern, and maintainable stack for your project is **AdonisJS v6** for the backend and **Quasar.js** (with Vue 3) for the frontend, all built in TypeScript.
+
+This combination offers a "batteries-included" experience, which is a natural and highly productive evolution from Express. AdonisJS provides the robust, integrated features (ORM, Auth, Queues) that Express leaves you to build, while Quasar provides a massive, high-quality UI component library out of the box, drastically speeding up B2B-centric UI development.
+
+-----
+
+## 1\. 🎯 Recommended Tech Stack
+
+Here is the recommended stack, chosen to maximize your productivity as a developer with an Express/scripting background.
+
+  * **Frontend:** **Quasar.js** (built on Vue 3)
+  * **Backend:** **AdonisJS v6** (built on Node.js)
+  * **Database:** **PostgreSQL**
+  * **Queuing:** **BullMQ** (via AdonisJS's first-party integration)
+  * **Cache:** **Redis** (used by BullMQ and for app caching)
+
+### Tech Stack Comparison
+
+| Component | Recommendation | Why It's the Best Choice (Pros) | Potential Downsides (Cons) |
+| :--- | :--- | :--- | :--- |
+| **Backend** | **AdonisJS v6** | **Smooth Learning Curve:** Coming from Express, Adonis will feel like "Express with superpowers." Its Model-View-Controller (MVC) pattern is easy to grasp, unlike NestJS's more complex, decorator-heavy, Angular-style architecture. <br><br> **"Batteries-Included":** First-party support for an ORM (Lucid), auth, validation, and message queues (BullMQ). This eliminates *weeks* of setup and integration work. <br><br> **Developer Experience (DX):** The CLI (`ace`) is exceptional for scaffolding controllers, models, and migrations, similar to Laravel or Rails. | **Smaller Community:** The community and job market are smaller than NestJS's. You'll find fewer Stack Overflow answers, but the official documentation is comprehensive and excellent. |
+| **Backend** | **(Alternative) NestJS** | **Enterprise Proven:** Widely adopted in large-scale enterprise applications. <br><br> **Large Ecosystem:** Huge community and many third-party modules. <br><br> **Architecture-First:** Forces a very structured, scalable, and modular design. | **Steep Learning Curve:** A *significant* jump from Express. It's heavily based on Angular's module and decorator patterns (Dependency Injection, IoC), which is a completely different paradigm. <br><br> **Boilerplate-Heavy:** Can feel verbose for a simple e-shop. You have to "wire up" everything, even with the CLI. |
+| **Frontend** | **Quasar.js** | **Massive Component Library:** Includes 80+ high-quality, enterprise-grade components. Its `QTable` component *alone* (with built-in filtering, sorting, pagination) is a massive time-saver for B2B. <br><br> **One Codebase:** You get a responsive website (SPA, SSR), PWA, and even mobile/desktop apps from a single codebase. Perfect for a "responsive" requirement. <br><br> **Batteries-Included:** Just like Adonis, it handles the "glue code" for you. | **Opinionated:** It has a distinct "Material Design" look (though fully customizable). <br><br> **Learning Curve:** You must learn the "Quasar way" of doing things (e.g., `q-layout`, `q-page`), but this *is* the Vue 3 way, just with a powerful framework on top. |
+| **Frontend** | **(Alternative) Vue 3 + Vuetify/PrimeVue** | **More Flexibility:** You get to pick and choose your component library and build your own layout shell. | **More "Glue Code":** You are responsible for integrating the UI library, setting up layouts, and ensuring everything works together. This is exactly the kind of setup work you're trying to avoid by upgrading from Express. |
+| **Database** | **PostgreSQL** | **Data Integrity:** B2B e-commerce (pricing tiers, complex orders, inventory) benefits from a relational model. <br><br> **Powerful Filtering:** Has built-in Full-Text Search and JSONB support, which is perfect for advanced product filtering *without* needing a separate service like Elasticsearch for your MVP. <br><br> **ORM Support:** AdonisJS's Lucid ORM has first-class, excellent support for PostgreSQL. | **Schema Rigidity:** Less flexible than NoSQL, but this is a feature, not a bug, for an e-commerce application where data consistency is critical. |
+
+-----
+
+## 2\. 📋 MVP Feature Prioritization & UI/UX
+
+For a simple B2B e-shop, the focus is **speed and efficiency**, not discovery and browsing. Your B2B buyers are time-poor, know what they need, and often re-order the same items.
+
+### Key UI/UX Principles (Core Question 3)
+
+1.  **Frictionless Filtering & Search:** This is the *most* important feature. The homepage should be a product catalog, not a marketing page. Filtering must be instant (client-side if possible, or very fast API) and multi-faceted (e.g., by finish, thickness, in-stock, price).
+2.  **Information Density:** B2B users prefer tables and dense, data-rich layouts over large, "lifestyle" images. Use **Quasar's `QTable`** component to display products in a grid with sortable columns for SKU, Price, and Stock.
+3.  **Account-Based Portal:** The "My Account" area is critical. It must feature:
+      * **Quick Re-order:** A button to re-add a previous order to the cart.
+      * **Tiered Pricing:** The prices they see *must* reflect their specific account's pricing tier.
+      * **Order/Quote History:** A clear list of past purchases and pending reservations.
+4.  **Clear Dual Checkout (Reserve vs. Purchase):**
+      * This choice should be made in the **cart view**.
+      * Do not have two separate checkout *flows*. Have one flow with two distinct *outcomes*.
+      * The cart should have two primary buttons:
+          * **`Purchase Now` (Green):** Leads to the payment/shipping page.
+          * **`Reserve & Request Quote` (Blue/Grey):** "Checks out" the cart with a `$0` total, moves the items to a "Pending Quotes" state in their account, and alerts an admin. This *must* also provisionally reserve the inventory (by creating a `reservation` job for the ERP).
+
+### MVP Feature List
+
+1.  **B2B Account Management:**
+      * Admin-only registration (or approval for new sign-ups).
+      * Company-level accounts (multiple users per company).
+      * Pricing Tiers (a "group" that a company belongs to).
+2.  **Product Catalog:**
+      * Products with variations (e.g., color, size).
+      * Tiered pricing logic (e.g., `base_price * company_group.multiplier`).
+      * **Real-time inventory levels** (fed from the ERP integration).
+3.  **Fast Filtering & Search:**
+      * Search by SKU, Name.
+      * Filter by Category, In-Stock, Price Range, and key attributes (e.t., `finish`, `wear_layer`).
+4.  **Cart & Dual-Path Checkout:**
+      * Standard shopping cart.
+      * Clear "Purchase" (with payment) and "Reserve" (no payment) CTAs.
+5.  **Customer Account Portal:**
+      * View order/reservation history.
+      * "Quick Re-order" button.
+6.  **ERP Integration Service:**
+      * Queue-based service to sync **Orders** (downstream) and **Inventory/Prices** (upstream).
+
+-----
+
+## 3\. ⚙️ Integration Architecture (Core Question 2)
+
+**Do not** call the legacy ERP (Helios Inuvio) API directly from your main e-shop backend. This is the single biggest point of failure. A slow or failed ERP call will crash your checkout process.
+
+The best practice is an **asynchronous, queue-based architecture** using a "Sidecar" service. Your main AdonisJS app *only* talks to a fast, reliable Redis queue. A separate, dedicated consumer process handles the slow, unreliable communication with the ERP.
+
+### Recommended Tool: **BullMQ**
+
+AdonisJS v6 has first-party support for queues, which uses **BullMQ** under the hood. It's built on Redis, which you'll already have for caching, and is perfect for a Node.js-only stack.
+
+### Architecture Diagram
+
+```
+                                                                 +-----------------------+
+                                                                 |   Legacy ERP System   |
+                                                                 |   (Helios Inuvio)     |
+                                                                 +-----------------------+
+                                                                     ^               |
+                               (5) Custom API Call (REST/SOAP)       |               | (6) Stock/Price Updates
+                               (e.g., POST /api/v1/new_order)        |               | (via a separate job)
+                                                                     |               v
++-----------------------+       +-----------------------+       +-----------------------+
+|                       |       |                       |       |   Integration Service |
+|    AdonisJS E-shop    |------>|      Redis (BullMQ)   |------>|   (AdonisJS Consumer) |
+|   (Web Request)       | (2)   |     (Job Queue)       | (4)   | (A separate process)  |
+|                       |       |                       |       |                       |
++-----------------------+       +-----------------------+       +-----------------------+
+    |                                   ^
+(1) User clicks "Purchase"            |
+    |                                   | (7) Job Failed?
+    v                                   | (After 5 retries)
++-----------------------+               |
+|   "Order Received"    |               |
+|   (Show to User)      |               v
++-----------------------+       +-----------------------+
+                                |  Dead Letter Queue (DLQ) |
+                                | (For manual review)   |
+                                +-----------------------+
+```
+
+### Resilient Implementation (Code Examples)
+
+This architecture uses **retries with exponential backoff** for transient errors (e.g., ERP server was restarting) and a **Dead-Letter Queue (DLQ)** for permanent errors (e.g., "Invalid SKU").
+
+#### 1\. Configure the Queue (in `config/queue.ts`)
+
+AdonisJS makes this simple. You just configure the `bull` driver.
+
+```typescript
+// config/queue.ts
+import { defineConfig } from '@adonisjs/queue'
+
+export default defineConfig({
+  // Default queue
+  default: 'bull',
+  
+  // Define queues
+  queues: {
+    bull: {
+      driver: 'bull',
+      // Connection to your Redis instance
+      connection: 'main',
+      
+      // Configuration for the "erp_jobs" queue
+      erp_jobs: {
+        // Default job options
+        defaultJobOptions: {
+          attempts: 5, // Try 5 times
+          backoff: {
+            type: 'exponential',
+            delay: 10000, // Wait 10s, then 20s, 40s...
+          },
+          removeOnComplete: true,
+          removeOnFail: false, // Keep failed jobs for the DLQ
+        },
+        // Enable a UI to see your queues
+        ui: {
+          port: 9999
+        }
+      },
+    },
+  },
+})
+```
+
+#### 2\. Producer: Dispatch the Job (in your `OrderController.ts`)
+
+When the user checks out, your controller **does not** try to contact the ERP. It just creates the order in *your* PostgreSQL database and dispatches a job.
+
+```typescript
+// app/controllers/orders_controller.ts
+import queue from '@adonisjs/queue/services/main'
+import db from '@adonisjs/lucid/services/db'
+
+export default class OrdersController {
+  async checkout({ auth, request }) {
+    const user = auth.user!
+    const cartItems = request.input('items')
+
+    // 1. Save the order to *your* local PostgreSQL DB first
+    const order = await db.transaction(async (trx) => {
+      const newOrder = await Order.create({ 
+        userId: user.id, 
+        status: 'pending_sync' // Mark as not yet synced
+      }, { client: trx })
+      
+      await newOrder.related('items').createMany(cartItems, { client: trx })
+      return newOrder
+    })
+
+    // 2. Dispatch a job to the 'erp_jobs' queue.
+    // This is fast and will not fail.
+    await queue.dispatch('App/jobs/sync_order_to_erp', {
+      orderId: order.id,
+      customerErpId: user.erpId
+    })
+
+    // 3. Immediately return success to the user.
+    // The user doesn't wait for the slow ERP.
+    return { success: true, message: 'Order received and is being processed.' }
+  }
+}
+```
+
+#### 3\. Consumer: Process the Job (in `app/jobs/sync_order_to_erp.ts`)
+
+This is a separate file that defines the job logic. You run this in a separate process with `node ace queue:work erp_jobs`.
+
+```typescript
+// app/jobs/sync_order_to_erp.ts
+import { BaseJob } from '@adonisjs/queue'
+import Order from 'App/models/order'
+import ErpService from 'App/services/erp_service' // Your custom service
+
+// Payload shape
+interface SyncOrderPayload {
+  orderId: number
+  customerErpId: string
+}
+
+export default class SyncOrderToErp extends BaseJob<SyncOrderPayload> {
+  // Tell BullMQ which queue to use
+  public queueName = 'erp_jobs'
+
+  public async handle(payload: SyncOrderPayload) {
+    const { orderId } = payload
+    const order = await Order.findOrFail(orderId)
+
+    try {
+      // 4. This is the only place that calls the slow, custom API
+      const erpResponse = await ErpService.sendOrder(
+        payload.customerErpId,
+        order.toJSON() // Send formatted data
+      )
+
+      // 5. Success! Update your local DB
+      order.status = 'synced'
+      order.erpOrderId = erpResponse.id
+      await order.save()
+
+    } catch (error) {
+      
+      // 6. Handle failure
+      if (ErpService.isPermanentError(error)) {
+        // e.g., "Invalid SKU" or "Customer Not Found". Retrying won't help.
+        // Move to DLQ immediately
+        await this.moveToDeadLetterQueue(error, 'permanent_failure')
+      } else {
+        // It's a transient error (e.g., 503, timeout).
+        // BullMQ will automatically retry this job
+        // based on the 'attempts' and 'backoff' config.
+        throw error // Re-throw to signal a retry is needed
+      }
+    }
+  }
+
+  /**
+   * Called after all 5 retries have failed.
+   */
+  public async failed(job, error) {
+    // 7. All retries failed. Move to DLQ for manual review.
+    await this.moveToDeadLetterQueue(error, 'all_retries_failed')
+  }
+
+  private async moveToDeadLetterQueue(error, reason) {
+    // Custom logic to save the failed job data to a
+    // separate 'dead_letter_jobs' table in your DB
+    // so an admin can review it.
+    console.error(`Job ${this.job.id} failed permanently: ${reason}`)
+    // ... save to DB ...
+  }
+}
+```
+
+-----
+
+## 4\. 🗺️ Development Roadmap (MVP)
+
+Here is a high-level roadmap focusing on an AI-assisted workflow.
+
+| Milestone | Key Tasks | Est. Time | AI-Assisted Tasks |
+| :--- | :--- | :--- | :--- |
+| **M1: Setup & Core Backend** | 1. Setup AdonisJS v6 project.<br>2. Configure PostgreSQL & Redis.<br>3. Define core models: `User`, `Company`, `Product`, `Order`.<br>4. Build database migrations for all models. | 1 Week | **Copilot:** "Write a Lucid model for `Product` with fields..."<br>**Claude:** "Design the database schema for a B2B e-shop with tiered pricing." |
+| **M2: Frontend Shell & Auth** | 1. Setup Quasar.js project.<br>2. Build the main app layout (`QLayout`).<br>3. Implement AdonisJS auth (JWT or sessions).<br>4. Build Quasar login, register, and account pages.<br>5. Connect Quasar auth to Adonis API. | 1.5 Weeks | **Copilot:** "Create a Quasar login form component with validation."<br>**Copilot:** "Write an AdonisJS controller method for user login." |
+| **M3: Product Catalog & Filtering** | 1. Build Adonis API for products (`/products`).<br>2. **Implement filtering logic (Core Q4)** in the controller (see below).<br>3. Build Quasar catalog page (`QTable` or `QCard` grid).<br>4. Build Quasar filtering sidebar. | 2 Weeks | **Copilot:** "Create a Quasar component with `QSelect` and `QRange` for filtering."<br>**Claude:** "Write an AdonisJS Lucid query that dynamically builds `WHERE` clauses from query params." |
+| **M4: Cart & Checkout** | 1. Implement cart logic (Pinia store in Quasar).<br>2. Build Adonis API for cart/checkout.<br>3. Build the two-path checkout UI (Purchase vs. Reserve).<br>4. Integrate a payment gateway (e.g., Stripe) for "Purchase." | 1.5 Weeks | **Copilot:** "Create a Pinia store for a shopping cart."<br>**Claude:** "What is the best practice for a 'Reserve vs. Purchase' checkout flow?" |
+| **M5: ERP Integration** | 1. Build the **Resilient Queue Service** (see Section 3).<br>2. Define the `SyncOrderToErp` job.<br>3. Create a "consumer" process to run the queue.<br>4. Create a separate job for syncing stock *from* the ERP *to* your DB. | 2 Weeks | **Claude:** "Review this BullMQ job. Are there any race conditions? How can I make it more resilient?"<br>**Copilot:** "Write a simple 'fetch' service to call a REST API." |
+| **M6: Deployment & Testing** | 1. Write E2E tests for the core checkout flow.<br>2. Create `Dockerfile` and `docker-compose.yml`.<br>3. Configure Nginx reverse proxy.<br>4. Setup Cloudflare (SSL & Security). | 1 Week | **Copilot:** "Generate a `Dockerfile` for this AdonisJS application."<br>**Claude:** "Generate an `nginx.conf` for a Node.js reverse proxy with SSL." |
+
+### 💡 Pattern for Filtering (Core Question 4)
+
+This is the most critical part of your API. Use PostgreSQL's power.
+
+**Frontend (Quasar - `Catalog.vue`)**
+Use a `ref` for filters and `watch` it (with a debounce) to trigger the API call.
+
+```vue
+<template>
+  <q-input v-model="filters.search" label="Search..." dense debounce="500" />
+  <q-select v-model="filters.category" :options="categories" dense />
+  <q-range v-model="filters.price" :min="0" :max="1000" />
+  </template>
+
+<script setup>
+import { ref, watch } in 'vue'
+import { api } from 'boot/axios'
+
+const filters = ref({
+  search: '',
+  category: null,
+  price: { min: 0, max: 1000 }
+})
+const products = ref([])
+
+async function fetchProducts() {
+  const { data } = await api.get('/products', { params: filters.value })
+  products.value = data
+}
+
+// Re-fetch products whenever filters change (after 500ms debounce)
+watch(filters, fetchProducts, { deep: true, immediate: true })
+</script>
+```
+
+**Backend (AdonisJS - `ProductsController.ts`)**
+Build the query dynamically using Lucid.
+
+```typescript
+// app/controllers/products_controller.ts
+import Product from 'App/models/product'
+
+export default class ProductsController {
+  async index({ request }) {
+    const { search, category, price } = request.qs()
+    
+    const query = Product.query()
+
+    if (category) {
+      query.where('categoryId', category)
+    }
+
+    if (price) {
+      query.whereBetween('price', [price.min, price.max])
+    }
+
+    if (search) {
+      // Use this for simple search
+      // query.where('name', 'ilike', `%${search}%`)
+      
+      // OR use this for *much better* Full-Text Search
+      query.whereRaw(`to_tsvector('english', name || ' ' || description) @@ to_tsquery('english', ?)`, [search])
+    }
+
+    return query.paginate(request.input('page', 1), 20)
+  }
+}
+```
+
+-----
+
+## 5\. 🤖 AI Tool Guide for Your Stack
+
+For 2025, you don't use *one* AI tool; you use the *right* tool for the *task*. Given your stack (AdonisJS, Quasar, TypeScript), here is the optimal workflow.
+
+| AI Tool | Recommendation | Strengths & Use Cases for Your Project |
+| :--- | :--- | :--- |
+| **GitHub Copilot** | **Primary Tool (In-Editor)** | **Strengths:** Fastest boilerplate generation and "autocomplete-on-steroids." It's your tireless pair programmer for line-by-line coding.<br><br>**Use For:**<br> \* **Boilerplate:** "Write this Quasar `QTable` component for products..."<br> \* **Adonis Scaffolding:** "Write an Adonis controller for `CRUD`..."<br> \* **Unit Tests:** "Write a unit test for this service."<br> \* **Repetitive Tasks:** Writing `Dockerfile`, `nginx.conf`, etc. |
+| **Claude 3.5 Sonnet / Claude Code** | **Secondary Tool (Web UI)** | **Strengths:** Superior reasoning, "full codebase" context (via large context window), and architectural planning. It's your "senior architect" or "code reviewer."<br><br>**Use For:**<br> \* **Architecture:** "I'm building a resilient queue for an ERP. Review my `SyncOrderToErp.ts` job for race conditions."<br> \* **Refactoring:** "Here are three files (controller, service, model). How can I refactor this to be more efficient?"<br> \* **Complex Logic:** "Write the complex Adonis/Lucid query for my filtering API."<br> \* **Debugging:** "My BullMQ job is failing silently. Here is the code and the logs. What are the likely causes?" |
+| **Cursor.sh** | **(Optional) Power-User Editor** | **Strengths:** An "AI-native" IDE (a fork of VS Code) that is "project-aware." It's excellent for large-scale refactors *within* the editor.<br><br>**Use If:** You find yourself context-switching to the Claude website too often. Cursor bakes that "chat with your code" ability directly into the editor, which can be faster than Copilot Chat for multi-file changes. |
+
+### AI-Assisted Deployment (Core Research Area)
+
+For your self-hosting requirement, here are the 2025 best practices:
+
+1.  **Cloudflare:** Use this as your front door. It's non-negotiable.
+      * **SSL/TLS:** Set this to **Full (Strict)**. This encrypts traffic from the user to Cloudflare, *and* from Cloudflare to your Nginx server.
+      * **Security:** Enable WAF (Web Application Firewall) rules and bot protection.
+      * **DNS:** Use Cloudflare to manage your DNS records, with the "Proxied" (orange cloud) option enabled.
+2.  **Nginx (Reverse Proxy):** This runs on your VPS. It's the only thing exposed to the internet (which Cloudflare will talk to).
+      * It should handle SSL termination using **Let's Encrypt** (Certbot).
+      * It will `proxy_pass` requests:
+          * `location /` -\> `http://localhost:3333` (Your AdonisJS app)
+          * `location /api` -\> `http://localhost:3333` (Same app)
+      * It should also be configured to serve your Quasar static build files (`/dist/spa`).
+3.  **Docker Compose:** This is the best way to manage your services on your server. Your `docker-compose.yml` will define:
+      * `app`: Your AdonisJS app.
+      * `db`: A `postgres:16` image.
+      * `cache`: A `redis:7` image.
+      * `consumer`: A *second instance* of your `app` image, but with a different `command`: `node ace queue:work erp_jobs`. This separates your web requests from your background jobs, which is critical for resilience.
+
+I hope this deep research and practical guide provides a clear path forward.
+
+Would you like me to generate the initial `docker-compose.yml` and `nginx.conf` files for this specific stack?
