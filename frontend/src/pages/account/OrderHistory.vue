@@ -26,15 +26,15 @@
         <template v-slot:body-cell-orderNumber="props">
           <q-td :props="props">
             <router-link :to="{ name: 'order-detail', params: { id: props.row.id } }">
-              {{ props.row.orderNumber }}
+              {{ props.row.orderNumber || props.row.order_number }}
             </router-link>
           </q-td>
         </template>
 
         <template v-slot:body-cell-orderType="props">
           <q-td :props="props">
-            <q-badge :color="props.row.orderType === 'purchase' ? 'primary' : 'secondary'">
-              {{ props.row.orderType === 'purchase' ? 'Purchase' : 'Reservation' }}
+            <q-badge :color="(props.row.orderType || props.row.order_type) === 'purchase' ? 'primary' : 'secondary'">
+              {{ (props.row.orderType || props.row.order_type) === 'purchase' ? 'Purchase' : 'Reservation' }}
             </q-badge>
           </q-td>
         </template>
@@ -49,13 +49,13 @@
 
         <template v-slot:body-cell-totalAmount="props">
           <q-td :props="props">
-            {{ props.row.totalAmount.toFixed(2) }} {{ props.row.currency }}
+            {{ formatPrice(props.row.totalAmount || props.row.total_amount) }} {{ props.row.currency || 'CZK' }}
           </q-td>
         </template>
 
         <template v-slot:body-cell-createdAt="props">
           <q-td :props="props">
-            {{ formatDate(props.row.createdAt) }}
+            {{ formatDate(props.row.createdAt || props.row.created_at) }}
           </q-td>
         </template>
 
@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, markRaw } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ordersService, type Order } from '@/services/orders.service'
 import { useCartStore } from '@/stores/cart'
@@ -108,11 +108,11 @@ const pagination = ref({
 })
 
 const columns = [
-  { name: 'orderNumber', label: 'Order #', field: 'orderNumber', align: 'left', sortable: true },
-  { name: 'orderType', label: 'Type', field: 'orderType', align: 'center' },
+  { name: 'orderNumber', label: 'Order #', field: (row: any) => row.orderNumber || row.order_number, align: 'left', sortable: true },
+  { name: 'orderType', label: 'Type', field: (row: any) => row.orderType || row.order_type, align: 'center' },
   { name: 'status', label: 'Status', field: 'status', align: 'center' },
-  { name: 'totalAmount', label: 'Total', field: 'totalAmount', align: 'right', sortable: true },
-  { name: 'createdAt', label: 'Date', field: 'createdAt', align: 'left', sortable: true },
+  { name: 'totalAmount', label: 'Total', field: (row: any) => row.totalAmount || row.total_amount, align: 'right', sortable: true },
+  { name: 'createdAt', label: 'Date', field: (row: any) => row.createdAt || row.created_at, align: 'left', sortable: true },
   { name: 'actions', label: 'Actions', align: 'center' }
 ]
 
@@ -137,17 +137,8 @@ async function loadOrders() {
     const response = await ordersService.getOrders(params)
     console.log('[OrderHistory] Got response:', response)
 
-    // Use markRaw to prevent Vue reactivity issues with complex nested structures
-    const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || response.data || [])
-    orders.value = rawData.map((order: any) => ({
-      id: order.id,
-      orderNumber: order.orderNumber || order.order_number,
-      orderType: order.orderType || order.order_type,
-      status: order.status,
-      totalAmount: order.totalAmount || order.total_amount,
-      createdAt: order.createdAt || order.created_at,
-      items: order.items || []
-    }))
+    // Simple assignment - let response structure be as-is
+    orders.value = response.data || []
 
     pagination.value.rowsNumber = response.meta?.total || 0
     console.log('[OrderHistory] Orders loaded successfully, count:', orders.value.length)
@@ -219,6 +210,13 @@ function getStatusColor(status: string): string {
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString) return 'N/A'
   return date.formatDate(new Date(dateString), 'DD.MM.YYYY HH:mm')
+}
+
+function formatPrice(price: any): string {
+  if (!price) return '0.00'
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price
+  return numPrice.toFixed(2)
 }
 </script>
