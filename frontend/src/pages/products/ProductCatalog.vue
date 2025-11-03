@@ -190,7 +190,7 @@ function addToCart(product: Product) {
   cartStore.addItem(product, 1)
 }
 
-function formatPrice(price: number) {
-  return price.toFixed(2)
+function formatPrice(price: number | string) {
+  return typeof price === 'string' ? parseFloat(price).toFixed(2) : price.toFixed(2)
 }
 </script>

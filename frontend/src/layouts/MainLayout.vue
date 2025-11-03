@@ -42,7 +42,7 @@
             flat
             dense
             label="Account"
-            :to="{ name: 'account' }"
+            :to="{ name: 'orders' }"
           />
           <q-btn
             flat

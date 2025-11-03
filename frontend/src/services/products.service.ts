@@ -7,7 +7,7 @@ export interface Product {
   sku: string
   slug: string
   description: string | null
-  basePrice: number
+  basePrice: string | number  // Backend returns as string from PostgreSQL
   stock: number
   unit: string
   isActive: boolean

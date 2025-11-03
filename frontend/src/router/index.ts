@@ -40,7 +40,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'account',
-        name: 'account',
         component: () => import('@/pages/account/AccountPage.vue'),
         meta: { requiresAuth: true },
         children: [
